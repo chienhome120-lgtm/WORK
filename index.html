@@ -1167,10 +1167,8 @@ body.background-listening #autoListenBtn{
 <div class="type-tabs three-tabs"><button id="academicTab" class="type-tab active" type="button">📘 學科題庫</button><button id="practicalTab" class="type-tab" type="button">📝 術科歷屆</button><button id="supplementTab" class="type-tab" type="button">📚 課後補充</button></div>
 <div class="form-grid"><div class="field"><label>題目範圍</label><select id="sectionSelect"></select></div><div class="field"><label>測驗模式</label><select id="modeSelect"><option value="random">隨機測驗</option><option value="sequential">順序練習</option><option value="wrong">錯題複習</option><option value="bookmark">收藏題練習</option></select></div><div class="field"><label>題數</label><select id="countSelect"><option value="20">20 題</option><option value="50">50 題</option><option value="100">100 題</option><option value="all">全部符合題目</option></select></div><div class="field"><label>關鍵字搜尋</label><input id="searchBox" type="search" placeholder="例如：就業服務法、外國人、職涯"></div></div>
 <div class="actions"><button id="startBtn" class="primary">開始作答</button><button id="toggleBankBtn" class="secondary">瀏覽題庫</button></div>
-<div class="actions"><button id="homeAutoListenBtn" class="listen-btn" type="button">🎧 背景連續聽題</button></div>
-<div class="actions"><button id="driveTestBtn" class="primary" type="button">☁️ Google Drive 鎖屏連播測試 Q0001～Q0010</button></div>
-<p class="voice-note">Google Drive 測試按鈕會固定播放 Q0001～Q0010，用來測試 Android／iPhone 鎖屏後是否能自動接續下一題。</p>
-<p class="voice-note">按上面的「🎧 背景連續聽題」後，會依目前選擇的「學科／術科、題目範圍、題數」直接開始朗讀：題目 → 答案 → 自動下一題。</p>
+<div class="actions"><button id="homeAutoListenBtn" class="listen-btn" type="button">🎧 GitHub Pages 鎖屏連續聽題</button></div>
+<p class="voice-note">按上面的「🎧 GitHub Pages 鎖屏連續聽題」後，會直接播放同網站 audio 資料夾中的 MP3：題目 → 答案 → 自動下一題。請從 GitHub Pages 網址開啟，不要下載 HTML 到手機本機執行。</p>
 <p class="muted">目前收藏 <span id="bookmarkCount">0</span> 題；測驗紀錄 <span id="historyCount">0</span> 次；上次成績 <span id="lastScore">尚無</span>。</p></section>
     <section id="bankPanel" class="card hidden"><h2>題庫瀏覽 <span class="muted" id="bankCount"></span></h2><div id="bankList"></div><div id="bankPager" class="bank-pager hidden"><button id="bankNextPageBtn" type="button">下一頁</button></div></section>
     <section class="card"><h2>管理</h2><div class="actions"><button id="reviewWrongBtn" class="secondary">練習錯題</button><button id="reviewBookmarkBtn" class="secondary">練習收藏</button><button id="exportWrongBtn" class="ghost">匯出錯題筆記</button></div><div class="actions"><button id="resetWrongBtn" class="ghost">清空錯題</button><button id="clearHistoryBtn" class="ghost">清除測驗紀錄</button></div></section>
@@ -1181,7 +1179,7 @@ body.background-listening #autoListenBtn{
 </div>
 <div class="voice-toolbar"><button id="bookmarkBtn" class="ghost" type="button">☆ 收藏</button><button id="listenCurrentBtn" class="listen-btn" type="button">🔊 聽本題＋答案</button><button id="backHomeBtn" class="back-btn" type="button">↩ 返回</button><button id="autoListenBtn" class="listen-btn" type="button">🎧 背景連續聽題</button><button id="stopVoiceBtn" class="stop-btn" type="button">■ 停止朗讀</button></div><div class="options" id="options"></div><div id="feedback" class="feedback hidden"></div><div class="actions"><button id="submitBtn" class="primary">送出答案</button><button id="nextBtn" class="secondary hidden">下一題</button></div></section></main>
   <main id="resultView" class="hidden"><section class="card"><h2>測驗結果</h2><div class="result-box"><div class="result-num"><span>得分</span><b id="resultScore">0/0</b></div><div class="result-num"><span>正確率</span><b id="resultAcc">0%</b></div></div><p id="resultNote"></p><div class="actions"><button id="restartBtn" class="primary">回到首頁</button><button class="ghost" onclick="document.getElementById('exportWrongBtn').click()">匯出錯題</button></div></section><section class="card"><h2>本次錯題</h2><div id="wrongList"></div></section></main>
-  <p class="footer-note">學科與術科題庫皆已嵌入 HTML；鎖屏連播測試音訊由 Google Drive 取得，答題紀錄只儲存在這支手機 / 這個瀏覽器。</p>
+  <p class="footer-note">學科與術科題庫皆已嵌入 HTML；鎖屏連續聽題使用同一個 GitHub Pages 網站的 audio MP3，答題紀錄只儲存在這支手機 / 這個瀏覽器。</p>
 </div>
 
 <div id="firstLoginOverlay" class="first-login-overlay hidden" aria-hidden="true">
@@ -1430,8 +1428,7 @@ function practicalSpeakText(q){
 }
 
 
-const GOOGLE_DRIVE_AUDIO_API='https://script.google.com/macros/s/AKfycby4U03QKYBe0zK9WWdExY7_bAZ4qbTZy6oJfZuYZ2QmhdQEUnfWjHcd6D1Z9BLsF-yk/exec';
-const DRIVE_AUDIO_CACHE=new Map();
+const LOCKSCREEN_AUDIO_BASE='audio/';
 let lockscreenAudioMode=false;
 let lockscreenAudioToken=0;
 
@@ -1439,26 +1436,6 @@ function audioFileNameForQuestion(q){
   if(!q) return '';
   if(q.id) return `${q.id}.mp3`;
   return '';
-}
-
-function resolveGoogleDriveAudioUrl(file){
-  if(DRIVE_AUDIO_CACHE.has(file)) return Promise.resolve(DRIVE_AUDIO_CACHE.get(file));
-  return new Promise((resolve,reject)=>{
-    const callbackName='__driveAudioCallback_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-    const script=document.createElement('script');
-    let finished=false;
-    const cleanup=()=>{ try{ delete window[callbackName]; }catch(e){ window[callbackName]=undefined; } if(script.parentNode) script.parentNode.removeChild(script); };
-    const timer=setTimeout(()=>{ if(finished) return; finished=true; cleanup(); reject(new Error('Google Drive 音訊查詢逾時')); },15000);
-    window[callbackName]=(data)=>{
-      if(finished) return; finished=true; clearTimeout(timer); cleanup();
-      if(data && data.ok && data.url){ DRIVE_AUDIO_CACHE.set(file,data.url); resolve(data.url); }
-      else reject(new Error((data && data.error) ? data.error : `找不到 ${file}`));
-    };
-    script.onerror=()=>{ if(finished) return; finished=true; clearTimeout(timer); cleanup(); reject(new Error('無法連線 Google Apps Script 音訊索引')); };
-    const sep=GOOGLE_DRIVE_AUDIO_API.includes('?')?'&':'?';
-    script.src=GOOGLE_DRIVE_AUDIO_API+sep+'name='+encodeURIComponent(file)+'&callback='+encodeURIComponent(callbackName)+'&_='+Date.now();
-    document.head.appendChild(script);
-  });
 }
 
 function setLockscreenStatus(text,show=true){
@@ -1489,7 +1466,7 @@ function stopLockscreenAudio(){
   setLockscreenStatus('',false);
 }
 
-async function playLockscreenQuestion(index,token){
+async function playLockscreenQuestion(index,token,fromUserGesture=false){
   if(!lockscreenAudioMode || token!==lockscreenAudioToken) return;
   if(index<0 || index>=state.quiz.length){
     stopLockscreenAudio();
@@ -1503,67 +1480,76 @@ async function playLockscreenQuestion(index,token){
   const q=state.quiz[index];
   const file=audioFileNameForQuestion(q);
   const player=document.getElementById('lockscreenAudioPlayer');
+
   if(!player || !file){
-    setLockscreenStatus('找不到可播放的 Google Drive 音訊檔');
+    setLockscreenStatus('找不到對應的 MP3 音訊檔');
     lockscreenAudioMode=false;
     state.autoListening=false;
     updateAutoButton();
-    toast('找不到 Google Drive 音訊，因此無法鎖屏聽題。');
+    toast('找不到對應的 MP3 音訊檔。');
     return;
   }
 
-  let src='';
+  const src=LOCKSCREEN_AUDIO_BASE+encodeURIComponent(file).replace(/%2F/g,'/');
+
+  // 手機第一次播放最重要：先設定來源並立即 play()，
+  // 不先等待 timer / Promise / 其他非同步工作，保留使用者點擊權限。
   try{
-    setLockscreenStatus(`正在從 Google Drive 取得第 ${index+1}/${state.quiz.length} 題…`);
-    src=await resolveGoogleDriveAudioUrl(file);
-  }catch(err){
-    if(!lockscreenAudioMode || token!==lockscreenAudioToken) return;
-    setLockscreenStatus(`Google Drive 找不到 ${file}`);
-    lockscreenAudioMode=false;
-    state.autoListening=false;
-    updateAutoButton();
-    toast(`Google Drive 音訊讀取失敗：${file}`);
-    console.warn('Google Drive 音訊查詢失敗：',err);
-    return;
-  }
-  if(!lockscreenAudioMode || token!==lockscreenAudioToken) return;
-  player.src=src;
-  updateMediaSessionForAudio(q,index);
-  setLockscreenStatus(`Google Drive 播放第 ${index+1}/${state.quiz.length} 題`);
+    player.onended=null;
+    player.onerror=null;
+    player.src=src;
+    player.load();
 
-  if(!document.hidden){
-    try{ renderQuestion(true); }catch(e){}
-  }
+    setLockscreenStatus(`正在載入 ${file}…`);
+    updateMediaSessionForAudio(q,index);
 
-  player.onended=()=>{
-    if(!lockscreenAudioMode || token!==lockscreenAudioToken) return;
-    playLockscreenQuestion(index+1,token);
-  };
-  player.onerror=()=>{
-    if(!lockscreenAudioMode || token!==lockscreenAudioToken) return;
-    setLockscreenStatus(`Google Drive 音訊播放失敗：${file}`);
-    lockscreenAudioMode=false;
-    state.autoListening=false;
-    updateAutoButton();
-    try{ player.pause(); }catch(e){}
-    toast(`Google Drive 音訊播放失敗：${file}`);
-  };
-
-  try{
     await player.play();
+
+    setLockscreenStatus(`正在播放第 ${index+1}/${state.quiz.length} 題｜${file}`);
+
+    if(!document.hidden){
+      try{ renderQuestion(true); }catch(e){}
+    }
+
+    player.onended=()=>{
+      if(!lockscreenAudioMode || token!==lockscreenAudioToken) return;
+      playLockscreenQuestion(index+1,token,false);
+    };
+
+    player.onerror=()=>{
+      if(!lockscreenAudioMode || token!==lockscreenAudioToken) return;
+      setLockscreenStatus(`音訊載入失敗：${file}`);
+      lockscreenAudioMode=false;
+      state.autoListening=false;
+      updateAutoButton();
+      try{ player.pause(); }catch(e){}
+      toast(`音訊載入失敗：${file}`);
+    };
   }catch(err){
-    setLockscreenStatus('手機未允許播放，請先點一次「背景連續聽題」');
-    console.warn('鎖屏音訊播放失敗：',err);
+    lockscreenAudioMode=false;
+    state.autoListening=false;
+    updateAutoButton();
+    setLockscreenStatus(`播放失敗：${err && err.message ? err.message : err}`);
+    console.warn('GitHub Pages MP3 播放失敗：',err);
+    toast('手機阻擋播放；請直接從 GitHub Pages HTTPS 網址開啟後再點一次播放。');
   }
 }
 
-async function startLockscreenAudioMode(){
+async function startLockscreenAudioMode(fromUserGesture=true){
   if(!state.quiz.length){
     toast('請先開始測驗或練習。');
     return;
   }
+
   stopVoice();
   stopBackgroundKeepAlive();
+
+  // 不呼叫 stopLockscreenAudio()，避免先遞增 token 再產生額外播放狀態。
+  const oldPlayer=document.getElementById('lockscreenAudioPlayer');
+  if(oldPlayer){
+    try{ oldPlayer.pause(); }catch(e){}
+  }
+
   lockscreenAudioToken++;
   const token=lockscreenAudioToken;
   lockscreenAudioMode=true;
@@ -1571,36 +1557,31 @@ async function startLockscreenAudioMode(){
   updateAutoButton();
 
   const player=document.getElementById('lockscreenAudioPlayer');
+
   if('mediaSession' in navigator && player){
     try{
-      navigator.mediaSession.setActionHandler('play',()=>player.play().catch(()=>{}));
-      navigator.mediaSession.setActionHandler('pause',()=>player.pause());
+      navigator.mediaSession.setActionHandler('play',()=>{
+        lockscreenAudioMode=true;
+        state.autoListening=true;
+        updateAutoButton();
+        player.play().catch(()=>{});
+      });
+      navigator.mediaSession.setActionHandler('pause',()=>{
+        player.pause();
+        setLockscreenStatus(`已暫停第 ${state.index+1}/${state.quiz.length} 題`);
+      });
       navigator.mediaSession.setActionHandler('nexttrack',()=>{
-        if(state.index<state.quiz.length-1) playLockscreenQuestion(state.index+1,token);
+        if(state.index<state.quiz.length-1) playLockscreenQuestion(state.index+1,token,false);
       });
       navigator.mediaSession.setActionHandler('previoustrack',()=>{
-        if(state.index>0) playLockscreenQuestion(state.index-1,token);
+        if(state.index>0) playLockscreenQuestion(state.index-1,token,false);
       });
       navigator.mediaSession.setActionHandler('stop',()=>stopAutoListen());
     }catch(e){}
   }
 
-  await playLockscreenQuestion(state.index,token);
-}
-
-
-async function startGoogleDriveTenQuestionTest(){
-  const testIds=new Set(['Q0001','Q0002','Q0003','Q0004','Q0005','Q0006','Q0007','Q0008','Q0009','Q0010']);
-  const testQuiz=QUESTIONS.filter(q=>testIds.has(q.id)).sort((a,b)=>a.id.localeCompare(b.id));
-  if(testQuiz.length!==10){ toast('測試題目 Q0001～Q0010 不完整。'); return; }
-  state.bankType='academic'; state.pool=[...testQuiz]; state.quiz=[...testQuiz]; state.index=0; state.selected=new Set(); state.submitted=false; state.score=0; state.wrongItems=[]; state.mode='sequential';
-  document.body.classList.add('quiz-active'); document.body.classList.remove('practical-mode');
-  document.getElementById('setupView')?.classList.add('hidden');
-  document.getElementById('resultView')?.classList.add('hidden');
-  document.getElementById('quizView')?.classList.remove('hidden');
-  try{ renderQuestion(true); }catch(e){}
-  setLockscreenStatus('準備 Google Drive Q0001～Q0010 鎖屏連播測試…');
-  await startLockscreenAudioMode();
+  // 必須直接在按鈕事件鏈中開始播放，不能 setTimeout。
+  await playLockscreenQuestion(state.index,token,fromUserGesture);
 }
 
 let backgroundQueueToken=0;
@@ -1821,7 +1802,7 @@ function autoSpeakCurrent(){
 }
 function toggleAutoListen(){
   if(state.autoListening){ stopAutoListen(); return; }
-  startLockscreenAudioMode();
+  startLockscreenAudioMode(true);
 }
 
 
@@ -1858,8 +1839,10 @@ function startAutoListenFromHome(){
   state.score=0;
   state.wrongItems=[];
   showView('quizView');
-  renderQuestion();
-  setTimeout(()=>startLockscreenAudioMode(),300);
+
+  // 手機瀏覽器要求第一次 audio.play() 必須直接源自使用者點擊。
+  // 因此不能再用 setTimeout 延遲啟動。
+  startLockscreenAudioMode(true);
 }
 
 
@@ -2343,6 +2326,4 @@ function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('sh
 function escapeHTML(s){ return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 document.addEventListener('DOMContentLoaded', init);
 
-
-document.getElementById('driveTestBtn')?.addEventListener('click', startGoogleDriveTenQuestionTest);
 </script></body></html>
